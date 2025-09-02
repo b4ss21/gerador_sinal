@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002Fbinary\u002F[symbol]","\u002Fbinary\u002Fdeposit","\u002Fbinary\u002Fdeposit\u002F[method]","\u002Fcookies","\u002Fprivacy-policy","\u002Fterms-and-conditions","\u002Fuser\u002Fprofile","\u002Fuser\u002Fprofile\u002Fsafety","\u002Fuser\u002Fprofile\u002Ftransactions"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()

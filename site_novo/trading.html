@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Painel de Negociação • Gerador de sinais pro</title>
+    <meta name="description" content="Painel com gráfico e ações básicas." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="./"><img src="assets/images/logo.png" alt="Gerador de sinais pro" /></a>
+        <nav class="nav">
+          <a class="btn btn--ghost" href="login.html">Entrar</a>
+          <a class="btn btn--primary" href="register.html">Criar conta</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section">
+      <div class="container grid grid--2">
+        <section class="panel">
+          <header class="panel__header">
+            <h2>BTC/BRL</h2>
+            <div class="panel__actions">
+              <button class="chip" data-time="1m">1m</button>
+              <button class="chip" data-time="5m">5m</button>
+              <button class="chip" data-time="15m">15m</button>
+              <button class="chip" data-time="1h">1h</button>
+            </div>
+          </header>
+          <iframe class="chart" title="Chart" srcdoc="<style>html,body{margin:0;height:100%}body{display:grid;place-items:center;background:#0b0f1a;color:#fff;font:14px system-ui}</style><body>Coloque seu gráfico aqui</body>"></iframe>
+        </section>
+        <aside class="panel">
+          <header class="panel__header">
+            <h3>Nova Ordem</h3>
+          </header>
+          <form class="form" onsubmit="return false;">
+            <label class="field">
+              <span>Valor (R$)</span>
+              <input type="number" min="10" step="10" placeholder="50" />
+            </label>
+            <label class="field">
+              <span>Duração</span>
+              <select>
+                <option>1 min</option>
+                <option>3 min</option>
+                <option>5 min</option>
+                <option>15 min</option>
+              </select>
+            </label>
+            <div class="actions">
+              <button class="btn btn--buy" type="button">Comprar</button>
+              <button class="btn btn--sell" type="button">Vender</button>
+            </div>
+          </form>
+        </aside>
+      </div>
+    </main>
+
+    <script src="assets/js/ui.js" defer></script>
+  </body>
+</html>

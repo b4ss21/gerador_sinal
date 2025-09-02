@@ -73,6 +73,8 @@ body {
 .header__inner > .nav { margin-left: auto; }
 /* Segurança: ocultar qualquer logo legado eventualmente injetado */
 .brand, img[alt*="loovi" i], img[alt*="loovitrade" i] { display: none !important; }
+/* Ocultar quaisquer imagens/SVG no header */
+.header__inner img, .header__inner svg { display: none !important; }
 .lang { position: relative; }
 .lang > summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); }
 .lang[open] ul { display: block; }

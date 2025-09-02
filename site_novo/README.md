@@ -1,20 +1,17 @@
-# Site novo (Gerador de sinais pro)
+# Gerador de sinais pro – site estático
 
-Este é um site estático, sem dependências do projeto anterior. Não há referências a domínios, variáveis ou bundles antigos.
+Publicado via GitHub Pages (Actions). Conteúdo servido de `site_novo/`.
 
 Estrutura:
-- index.html: página inicial (hero com plano de fundo, logo e barra de progresso)
-- assets/css/styles.css: estilos mínimos
-- assets/js/app.js: simulação da barra de progresso
-- assets/images/: coloque aqui suas imagens (bg-binary.png, logo.png)
+- `index.html`: splash com loader e redirecionamento para `login.html`.
+- `login.html`, `register.html`, `trading.html`.
+- `assets/` com CSS/JS/Imagens locais.
+- `404.html` e `.nojekyll` para compatibilidade do Pages.
 
-Como usar:
-1. Copie suas imagens para `assets/images/` com os nomes:
-   - bg-binary.png
-   - logo.png
-2. Abra `index.html` no navegador.
+Publicação:
+- Workflow: `.github/workflows/deploy-pages.yml` (envia `site_novo/`).
+- URL: `https://<usuario>.github.io/<repo>/` (ex.: `https://b4ss21.github.io/gerador_sinal/`).
 
-Personalizações rápidas:
-- Título e descrição no `<head>`.
-- Cores em `:root` no `styles.css`.
-- Velocidade do loader em `app.js`.
+Notas:
+- Links e assets são relativos (ex.: `index.html`, `assets/...`) para funcionar sob `/NOME_DO_REPO/`.
+- Ajuste títulos/cores em `index.html` e `assets/css/styles.css`.

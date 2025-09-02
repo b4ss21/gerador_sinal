@@ -98,6 +98,7 @@ body {
 .panel__actions { display: flex; gap: 8px; }
 .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #fff; cursor: pointer; }
 .chip:hover { background: rgba(255,255,255,0.08); }
+.chip.active { background: rgba(124,183,255,0.18); border-color: rgba(124,183,255,0.5); }
 .chart { width: 100%; height: 420px; border: 0; display: block; }
 
 /* Grid */

@@ -234,10 +234,23 @@
         extVotes = await window.SignalAlgos.runAll(ctx);
       }
     } catch (e) {}
-    const votesBuy = extVotes.filter(v => (v.side || v.signal) === 'buy').length;
-    const votesSell = extVotes.filter(v => (v.side || v.signal) === 'sell').length;
-    const buy = baseBuy || (votesBuy > votesSell && votesBuy > 0);
-    const sell = baseSell || (votesSell > votesBuy && votesSell > 0);
+    // Votos ponderados por confiança (0..1 ou 0..100)
+    const weighted = (extVotes || []).map(v => {
+      const side = String(v.side || v.signal || '').toLowerCase();
+      let w = typeof v.confidence === 'number' ? v.confidence : (typeof v.score === 'number' ? v.score : 1);
+      if (w > 1) w = w / 100;
+      if (!(w >= 0)) w = 0; // NaN -> 0
+      return { name: v.name, side, w };
+    });
+    const sumBuy = weighted.filter(x => x.side === 'buy').reduce((a, b) => a + b.w, 0);
+    const sumSell = weighted.filter(x => x.side === 'sell').reduce((a, b) => a + b.w, 0);
+    // Decisão: mantém sinal base; se neutro, usa ponderado com limiar mínimo
+    let buy = baseBuy;
+    let sell = baseSell;
+    if (!buy && !sell) {
+      if (sumBuy > sumSell && sumBuy >= 0.5) buy = true;
+      else if (sumSell > sumBuy && sumSell >= 0.5) sell = true;
+    }
 
     // Evitar redesenhar igual
     const key = `${state.pair}|${state.interval}|${bars[last].t}`;
@@ -310,7 +323,9 @@
       if (buy || sell) {
         const isLong = buy && !sell;
         const linesTxt = overlayLines.map(x => `${x.k}: ${fmt(x.v)}`).join(' | ');
-        const voteTxt = (extVotes && extVotes.length) ? ` • algos: ${extVotes.map(v => v.name + ':' + (v.side || v.signal || '?')).join(', ')}` : '';
+        const voteTxt = (extVotes && extVotes.length)
+          ? ` • algos: ${extVotes.map(v => v.name + ':' + (v.side || v.signal || '?')).join(', ')} • ΣB:${sumBuy.toFixed(2)} ΣS:${sumSell.toFixed(2)}`
+          : '';
         badge.textContent = `${isLong ? 'BUY' : 'SELL'} • ${linesTxt}${voteTxt}`;
         badge.dataset.side = isLong ? 'buy' : 'sell';
         badge.style.display = 'inline-flex';

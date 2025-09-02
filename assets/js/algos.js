@@ -1,8 +1,15 @@
 // Registro de algoritmos externos para análise técnica
 (function () {
   const registry = [];
+  const weights = Object.create(null);
   function registerAlgo(name, fn) { registry.push({ name, fn }); }
   function listAlgos() { return registry.map(r => r.name); }
+  function setWeight(name, w) { if (typeof w === 'number' && w > 0) weights[name] = w; persist(); }
+  function setWeights(obj) { if (!obj) return; for (const k of Object.keys(obj)) setWeight(k, obj[k]); }
+  function getWeight(name) { return weights[name] || 1; }
+  function persist() { try { localStorage.setItem('algoWeights', JSON.stringify(weights)); } catch (e) {} }
+  function load() { try { const v = JSON.parse(localStorage.getItem('algoWeights')||'{}'); Object.assign(weights, v||{}); } catch (e) {} }
+  load();
   async function runAll(ctx) {
     const results = [];
     for (const r of registry) {
@@ -10,7 +17,7 @@
     }
     return results;
   }
-  window.SignalAlgos = { registerAlgo, listAlgos, runAll };
+  window.SignalAlgos = { registerAlgo, listAlgos, runAll, setWeight, setWeights, getWeight };
 
   // Tentativa de carregar um arquivo opcional (externo) se existir em /custom-algos.js
   try {
@@ -51,6 +58,8 @@
           }
           if (out.side || out.signal) return { side: out.side || out.signal };
         });
+  // Priorizar o algoritmo do outro projeto por padrão
+  if (!weights['Other.TA']) setWeight('Other.TA', 2.0);
         tryRegisterExternalOnce._ta = true;
       }
       // 2) SignalCard/OtherSignals genéricos

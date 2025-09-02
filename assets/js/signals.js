@@ -240,6 +240,13 @@
       let w = typeof v.confidence === 'number' ? v.confidence : (typeof v.score === 'number' ? v.score : 1);
       if (w > 1) w = w / 100;
       if (!(w >= 0)) w = 0; // NaN -> 0
+      // multiplicar pelo peso configurável do algoritmo
+      try {
+        if (window.SignalAlgos && typeof window.SignalAlgos.getWeight === 'function') {
+          const mult = window.SignalAlgos.getWeight(v.name);
+          if (typeof mult === 'number' && mult > 0) w *= mult;
+        }
+      } catch (e) {}
       return { name: v.name, side, w };
     });
     const sumBuy = weighted.filter(x => x.side === 'buy').reduce((a, b) => a + b.w, 0);

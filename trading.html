@@ -50,77 +50,25 @@
         </section>
         <aside class="panel">
           <header class="panel__header">
-            <h3>Simulador (Futuros)</h3>
+            <h3>Nova Ordem</h3>
           </header>
-          <form class="form" id="simForm" onsubmit="return false;">
-            <div class="form__row">
-              <label class="field w-100">
-                <span>Modo de Margem</span>
-                <select id="mode">
-                  <option value="cross">Cruzada</option>
-                  <option value="isolated">Isolada</option>
-                </select>
-              </label>
-              <label class="field" style="min-width:120px">
-                <span>Alavancagem</span>
-                <select id="leverage">
-                  <option>1x</option>
-                  <option>3x</option>
-                  <option selected>20x</option>
-                  <option>50x</option>
-                  <option>100x</option>
-                </select>
-              </label>
-            </div>
-
-            <div class="tabs">
-              <button class="chip" data-order-tab="limit">Limite</button>
-              <button class="chip active" data-order-tab="market">Mercado</button>
-              <button class="chip" data-order-tab="stop">Stop Limit</button>
-            </div>
-
-            <p class="muted" id="balanceLine">Disponível —</p>
-
-            <label class="field" data-field-limit>
-              <span>Preço</span>
-              <div class="input-append">
-                <input id="price" type="number" step="0.01" placeholder="Preço" />
-                <span class="append" id="quote">—</span>
-              </div>
-            </label>
-
+          <form class="form" onsubmit="return false;">
             <label class="field">
-              <span>Quantidade</span>
-              <div class="input-append">
-                <input id="qty" type="number" step="0.0001" placeholder="0.001" />
-                <span class="append" id="base">—</span>
-              </div>
-              <input id="qtyRange" type="range" min="0" max="100" value="0" />
+              <span>Valor (R$)</span>
+              <input type="number" min="10" step="10" placeholder="50" />
             </label>
-
-            <div class="checks">
-              <label class="check"><input type="checkbox" id="tpls" /> TP/SL</label>
-              <label class="check"><input type="checkbox" id="reduce" /> Reduce-Only</label>
-            </div>
-
+            <label class="field">
+              <span>Duração</span>
+              <select>
+                <option>1 min</option>
+                <option>3 min</option>
+                <option>5 min</option>
+                <option>15 min</option>
+              </select>
+            </label>
             <div class="actions">
-              <button class="btn btn--buy w-100" type="button" id="buyBtn">Comprar/Long</button>
-              <button class="btn btn--sell w-100" type="button" id="sellBtn">Vender/Short</button>
-            </div>
-
-            <div class="card" id="estimates" style="margin-top:12px">
-              <div class="form__row">
-                <span class="muted">Preço de referência</span>
-                <strong id="refPrice">—</strong>
-              </div>
-              <div class="form__row">
-                <span class="muted">Custo estimado</span>
-                <strong id="cost">—</strong>
-              </div>
-              <div class="form__row">
-                <span class="muted">Preço de liquidação (aprox.)</span>
-                <strong id="liq">—</strong>
-              </div>
+              <button class="btn btn--buy" type="button">Comprar</button>
+              <button class="btn btn--sell" type="button">Vender</button>
             </div>
           </form>
         </aside>
@@ -132,6 +80,5 @@
     <!-- TradingView Widget -->
     <script src="https://s3.tradingview.com/tv.js"></script>
     <script src="assets/js/trading.js" defer></script>
-  <script src="assets/js/simulator.js" defer></script>
   </body>
   </html>

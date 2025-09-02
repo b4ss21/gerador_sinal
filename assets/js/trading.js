@@ -95,12 +95,11 @@
     });
 
     // Pares
-  document.querySelectorAll('[data-pair]').forEach(btn => {
+    document.querySelectorAll('[data-pair]').forEach(btn => {
       btn.addEventListener('click', () => {
         state.pair = btn.getAttribute('data-pair');
         selectChip('[data-pair]', btn);
         setTitle();
-    try { window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair, tvSymbol: toTVSymbol(state.pair) } })); } catch (e) {}
         if (state.widget) {
           const symbol = toTVSymbol(state.pair);
           try { state.widget.chart().setSymbol(symbol); } catch (e) { initTV(); }
@@ -124,6 +123,5 @@
     setTitle();
     bindUI();
     initTV();
-  try { window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair, tvSymbol: toTVSymbol(state.pair) } })); } catch (e) {}
   });
 })();

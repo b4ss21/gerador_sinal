@@ -47,13 +47,3 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 .panel--sub { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -1px; }
 .markets { padding: 12px 16px 16px; }
 .markets__list { display: flex; flex-wrap: wrap; gap: 8px; }
-
-/* Simulador */
-.tabs { display: flex; gap: 8px; margin: 6px 0 8px; }
-.input-append { position: relative; }
-.input-append input { width: 100%; padding-right: 54px; }
-.input-append .append { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); opacity: 0.8; font-size: 12px; }
-input[type="range"] { width: 100%; accent-color: #7CB7FF; }
-.w-100 { width: 100%; }
-.btn--buy { --btn-bg: #17b26a; --btn-bd: #17b26a; }
-.btn--sell { --btn-bg: #ef4444; --btn-bd: #ef4444; }

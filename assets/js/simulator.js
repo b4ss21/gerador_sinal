@@ -14,8 +14,6 @@
     leverage: 20,
     mode: 'cross',
     balance: 12000, // saldo demo em moeda de cotação
-  position: null, // { side: 'long'|'short', qty, entry, margin }
-  timer: null,
   };
 
   function parsePair(pair) {
@@ -95,9 +93,14 @@
     const toast = (msg) => {
       console.log('[SIM]', msg);
     };
-  el('#buyBtn').addEventListener('click', () => openPosition('long'));
-  el('#sellBtn').addEventListener('click', () => openPosition('short'));
-  el('#closePos').addEventListener('click', closePosition);
+    el('#buyBtn').addEventListener('click', () => {
+      updateEstimates();
+      toast('Simulação: posição Long aberta.');
+    });
+    el('#sellBtn').addEventListener('click', () => {
+      updateEstimates();
+      toast('Simulação: posição Short aberta.');
+    });
 
     // Ouvir mudanças de par vindas do gráfico/UI
     window.addEventListener('pairChange', async (ev) => {
@@ -111,8 +114,6 @@
       // Preencher inputs
       if (state.price) el('#price').value = state.price;
       updateEstimates();
-  // Ao trocar de par, fechar posição simulada, se houver
-  if (state.position) closePosition();
     });
   }
 
@@ -123,64 +124,5 @@
     // Estado inicial com par default do trading.js
     const ev = new CustomEvent('pairChange', { detail: { pair: 'BTC/BRL' } });
     window.dispatchEvent(ev);
-    startTicker();
   });
-
-  function openPosition(side) {
-    const qty = Number(el('#qty').value || 0);
-    const price = Number((el('#price').value || state.price) || 0);
-    if (!qty || !price || state.position) return;
-    const notional = qty * price;
-    const margin = notional / state.leverage;
-    state.position = { side, qty, entry: price, margin };
-    state.balance -= margin; if (state.balance < 0) state.balance = 0;
-    renderPosition();
-  }
-
-  function closePosition() {
-    if (!state.position) return;
-    // liberar margem e PnL no saldo
-    const pnl = calcPnl();
-    state.balance += state.position.margin + pnl;
-    state.position = null;
-    renderPosition();
-  }
-
-  function calcPnl() {
-    if (!state.position || !state.price) return 0;
-    const { side, qty, entry } = state.position;
-    const diff = side === 'long' ? (state.price - entry) : (entry - state.price);
-    return diff * qty;
-  }
-
-  function renderPosition() {
-    syncUI();
-    const card = el('#position');
-    if (!state.position) { card.style.display = 'none'; return; }
-    card.style.display = '';
-    el('#posSide').textContent = state.position.side.toUpperCase();
-    el('#posQty').textContent = `${state.position.qty} ${state.base}`;
-    el('#posEntry').textContent = fmt(state.position.entry, state.quote);
-    el('#posMargin').textContent = fmt(state.position.margin, state.quote);
-    el('#posMark').textContent = fmt(state.price, state.quote);
-    const pnl = calcPnl();
-    const roe = state.position.margin ? (pnl / state.position.margin) * 100 : 0;
-    const pnlEl = el('#posPnl');
-    pnlEl.textContent = `${fmt(pnl, state.quote)}  (${roe.toFixed(2)}%)`;
-    pnlEl.classList.toggle('positive', pnl >= 0);
-    pnlEl.classList.toggle('negative', pnl < 0);
-  }
-
-  async function tick() {
-    if (!state.pair) return;
-    const data = await fetchPrice(state.pair);
-    if (data.price) state.price = data.price;
-    el('#refPrice').textContent = state.price ? `${fmt(state.price, state.quote)} / ${state.quote}` : '—';
-    if (state.position) renderPosition();
-  }
-  function startTicker() {
-    if (state.timer) clearInterval(state.timer);
-    state.timer = setInterval(tick, 2500);
-    tick();
-  }
 })();

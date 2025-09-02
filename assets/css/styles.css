@@ -57,6 +57,3 @@ input[type="range"] { width: 100%; accent-color: #7CB7FF; }
 .w-100 { width: 100%; }
 .btn--buy { --btn-bg: #17b26a; --btn-bd: #17b26a; }
 .btn--sell { --btn-bg: #ef4444; --btn-bd: #ef4444; }
-.pnl { color: #ddd; }
-.pnl.positive { color: #17b26a; }
-.pnl.negative { color: #ef4444; }

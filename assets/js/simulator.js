@@ -59,11 +59,13 @@
 
     const notional = qty * price; // em quote
     const initialMargin = notional / lev;
+  const feeRate = state.orderType === 'market' ? 0.0006 : 0.0002; // taker vs maker (aprox.)
+  const fee = notional * feeRate;
     const maintenanceRate = 0.005; // 0.5% simples (demo)
     const maintMargin = notional * maintenanceRate;
     const liqPriceLong = price * (1 - (initialMargin - maintMargin) / notional);
 
-    el('#cost').textContent = `${fmt(initialMargin, state.quote)} (margem inicial)`;
+  el('#cost').textContent = `${fmt(initialMargin, state.quote)} (margem inicial)  +  taxa ${fmt(fee, state.quote)}`;
     el('#liq').textContent = `${fmt(liqPriceLong, state.quote)} (Long aprox.)`;
   }
 

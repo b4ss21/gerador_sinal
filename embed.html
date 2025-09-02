@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chart Embed</title>
+  <style>
+    html, body { height:100%; margin:0; }
+    body { background:#0b0f1a; color:#fff; }
+    #tv_chart, #lw_chart { width:100%; height:100%; }
+    #lw_chart { display:none; }
+  </style>
+  <script src="https://s3.tradingview.com/tv.js"></script>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+  <div id="tv_chart" aria-label="TradingView"></div>
+  <div id="lw_chart" aria-label="Lightweight"></div>
+
+  <script>
+  (function(){
+    function q(name, def){ const u=new URL(location.href); return u.searchParams.get(name) || def; }
+    const pair = q('pair','BTC/USDT');
+    const tf = q('tf','1h'); // 1m,3m,5m,15m,1h
+    const provider = (q('provider','tv')||'').toLowerCase(); // tv|lw
+    const theme = (q('theme','dark')||'').toLowerCase();
+
+    function tvSymbol(p){
+      const m={ 'BTC/USDT':'BINANCE:BTCUSDT','ETH/USDT':'BINANCE:ETHUSDT','SOL/USDT':'BINANCE:SOLUSDT','ONDO/USDT':'BINANCE:ONDOUSDT','PAXG/USDT':'BINANCE:PAXGUSDT','WIF/USDT':'BINANCE:WIFUSDT','BCH/USDT':'BINANCE:BCHUSDT','BTC/BRL':'BINANCE:BTCBRL','ETH/BRL':'BINANCE:ETHBRL','SOL/BRL':'BINANCE:SOLBRL' }; return m[p]||'BINANCE:BTCUSDT'; }
+    function tvInterval(t){ const m={ '1m':'1','3m':'3','5m':'5','15m':'15','1h':'60' }; return m[t]||'60'; }
+    function lwSymbol(p){ const m={ 'BTC/USDT':'BTCUSDT','ETH/USDT':'ETHUSDT','SOL/USDT':'SOLUSDT','ONDO/USDT':'ONDOUSDT','PAXG/USDT':'PAXGUSDT','WIF/USDT':'WIFUSDT','BCH/USDT':'BCHUSDT','BTC/BRL':'BTCBRL','ETH/BRL':'ETHBRL','SOL/BRL':'SOLBRL' }; return m[p]||'BTCUSDT'; }
+    function lwInterval(t){ return t; }
+
+    async function fetchK(symbol, interval, limit=500){
+      const urls=[`https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`];
+      let lastErr; for(const u of urls){ try{ const r=await fetch(u,{cache:'no-store'}); if(!r.ok){ lastErr=new Error('HTTP '+r.status); continue; } const d=await r.json(); if(!Array.isArray(d)){ lastErr=new Error('Formato'); continue; } return d.map(x=>({ time: Math.floor(x[0]/1000), open:+x[1], high:+x[2], low:+x[3], close:+x[4] })); }catch(e){ lastErr=e; } } throw lastErr||new Error('Falha'); }
+
+    function showTV(){
+      document.getElementById('tv_chart').style.display='block';
+      document.getElementById('lw_chart').style.display='none';
+      // eslint-disable-next-line no-undef
+      new TradingView.widget({ symbol: tvSymbol(pair), interval: tvInterval(tf), container_id: 'tv_chart', locale:'br', timezone:'America/Sao_Paulo', theme: theme==='light'?'light':'dark', autosize:true, hide_side_toolbar:false, hide_top_toolbar:false, withdateranges:true, allow_symbol_change:false });
+    }
+
+    async function showLW(){
+      document.getElementById('tv_chart').style.display='none';
+      document.getElementById('lw_chart').style.display='block';
+      // eslint-disable-next-line no-undef
+      const chart = LightweightCharts.createChart(document.getElementById('lw_chart'), { layout:{ background:{type:'solid', color: theme==='light'?'#fff':'#0b0f1a'}, textColor: theme==='light'?'#111':'#fff' }, rightPriceScale:{ borderVisible:false }, timeScale:{ borderVisible:false }, grid:{ vertLines:{ color:'rgba(255,255,255,0.06)' }, horzLines:{ color:'rgba(255,255,255,0.06)' } } });
+      const series = chart.addCandlestickSeries({ upColor:'#17b26a', downColor:'#ef4444', borderUpColor:'#17b26a', borderDownColor:'#ef4444', wickUpColor:'#17b26a', wickDownColor:'#ef4444' });
+      const bars = await fetchK(lwSymbol(pair), lwInterval(tf), 500);
+      series.setData(bars);
+      // aceitar marcador via query (?markSide=buy&markTime=unix&markPrice=123)
+      const ms = (q('markSide','')||'').toLowerCase();
+      const mt = parseInt(q('markTime','0'),10);
+      const mp = parseFloat(q('markPrice','0'));
+      if(ms && mt && mp){
+        series.setMarkers([{ time: mt, position: ms==='buy'?'belowBar':'aboveBar', color: ms==='buy'?'#17b26a':'#ef4444', shape: ms==='buy'?'arrowUp':'arrowDown', text: ms==='buy'?'COMPRA':'VENDA' }]);
+      }
+    }
+
+    if(provider==='lw') showLW(); else showTV();
+  })();
+  </script>
+</body>
+</html>

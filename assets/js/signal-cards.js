@@ -7,21 +7,21 @@
   function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
 
   function ensurePanel(){
-    let host = document.getElementById('signalsPanel');
-    if (host) return host;
-    host = document.createElement('div');
-    host.id = 'signalsPanel';
-    host.style.position='fixed';
-    host.style.right='16px';
-    host.style.bottom='16px';
-    host.style.width='360px';
-    host.style.maxHeight='70vh';
-    host.style.overflow='auto';
-    host.style.zIndex='2147483647';
-    host.style.display='grid';
-    host.style.gap='12px';
-    document.body.appendChild(host);
-    return host;
+  let host = document.getElementById('signalsPanel');
+  if (host) return host;
+  host = document.createElement('div');
+  host.id = 'signalsPanel';
+  host.style.position='fixed';
+  host.style.right='16px';
+  host.style.bottom='16px';
+  host.style.width='360px';
+  host.style.maxHeight='70vh';
+  host.style.overflow='auto';
+  host.style.zIndex='2147483647';
+  host.style.display='grid';
+  host.style.gap='12px';
+  document.body.appendChild(host);
+  return host;
   }
 
   async function fetchK(symbol, interval='1h', limit=300){
@@ -59,6 +59,18 @@
   }
 
   function fmt(n){ return (n>=1? n.toFixed(4): n.toFixed(6)); }
+
+  function renderTitle(host){
+    const bar=document.createElement('div');
+    bar.style.background='rgba(20,26,42,0.92)';
+    bar.style.border='1px solid rgba(255,255,255,0.12)';
+    bar.style.borderRadius='10px';
+    bar.style.padding='8px 10px';
+    bar.style.color='#fff';
+    bar.style.fontWeight='700';
+    bar.textContent='Sinais Gerados';
+    host.appendChild(bar);
+  }
 
   function renderCard(host, pair, tf, sig){
     const box=document.createElement('div');
@@ -106,19 +118,32 @@
 
   async function generate(){
     const host=ensurePanel(); host.innerHTML='';
+    renderTitle(host);
+    let count=0;
     for(const pair of PAIRS){
       try{
         const bars=await fetchK(MAP[pair], TF, 300);
         const sig=decide(bars);
-        if(sig){ renderCard(host, pair, TF, sig); }
+        if(sig){ renderCard(host, pair, TF, sig); count++; }
       }catch(e){ /* ignora par que falhar */ }
+    }
+    if(count===0){
+      const empty=document.createElement('div');
+      empty.className='card';
+      empty.style.background='#141A2A';
+      empty.style.border='1px solid rgba(255,255,255,0.08)';
+      empty.style.borderRadius='12px';
+      empty.style.padding='12px';
+      empty.style.color='#fff';
+      empty.textContent='Sem sinais no momento.';
+      host.appendChild(empty);
     }
   }
 
   ready(()=>{
     // pequena espera para TV iniciar
     setTimeout(generate, 1200);
-    // atualizar a cada 5 minutos
-    setInterval(generate, 5*60*1000);
+  // atualizar a cada 1 minuto para feedback mais rápido
+  setInterval(generate, 60*1000);
   });
 })();

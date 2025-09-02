@@ -15,6 +15,12 @@
     const m = { '1m': '1m', '3m': '3m', '5m': '5m', '15m': '15m', '1h': '1h' };
     return m[tf] || '1m';
   }
+  function intervalSeconds(tf) {
+    switch (tf) {
+      case '1m': return 60; case '3m': return 180; case '5m': return 300; case '15m': return 900; case '1h': return 3600;
+      default: return 60;
+    }
+  }
   function toBinance(pair) {
     const map = {
       'BTC/USDT': 'BTCUSDT', 'ETH/USDT': 'ETHUSDT', 'SOL/USDT': 'SOLUSDT',
@@ -132,6 +138,18 @@
     return { up, down };
   }
 
+  function ensureBadge() {
+    const host = document.getElementById('tv_chart');
+    if (!host) return null;
+    let b = host.querySelector('.signal-badge');
+    if (!b) {
+      b = document.createElement('div');
+      b.className = 'signal-badge';
+      host.appendChild(b);
+    }
+    return b;
+  }
+
   async function analyzeAndDraw() {
     const chart = tvChart();
     if (!chart) return;
@@ -185,11 +203,20 @@
     } catch (e) {}
 
     const ts = Math.floor(bars[last].t / 1000);
+    const priceAt = closes[last];
     if (buy) {
-      try { chart.createShape({ time: ts }, { shape: 'arrow_up', text: 'BUY', lock: true, disableSelection: true, overrides: { color: '#17b26a' } }); } catch (e) {}
+      try { chart.createShape({ time: ts, price: priceAt }, { shape: 'arrow_up', text: 'BUY', lock: true, disableSelection: true, overrides: { color: '#17b26a' } }); } catch (e) {}
     }
     if (sell) {
-      try { chart.createShape({ time: ts }, { shape: 'arrow_down', text: 'SELL', lock: true, disableSelection: true, overrides: { color: '#ef4444' } }); } catch (e) {}
+      try { chart.createShape({ time: ts, price: priceAt }, { shape: 'arrow_down', text: 'SELL', lock: true, disableSelection: true, overrides: { color: '#ef4444' } }); } catch (e) {}
+    }
+
+    // Fallback visual (badge) caso shapes não apareçam
+    const badge = ensureBadge();
+    if (badge) {
+      if (buy) { badge.textContent = 'BUY'; badge.dataset.side = 'buy'; badge.style.display = 'inline-flex'; }
+      else if (sell) { badge.textContent = 'SELL'; badge.dataset.side = 'sell'; badge.style.display = 'inline-flex'; }
+      else { badge.style.display = 'none'; }
     }
   }
 

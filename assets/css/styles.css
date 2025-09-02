@@ -49,10 +49,6 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 .panel--sub { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: -1px; }
 .markets { padding: 12px 16px 16px; }
 .markets__list { display: flex; flex-wrap: wrap; gap: 8px; }
-.orders { display: grid; gap: 8px; }
-.orders .order { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; padding: 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; }
-.orders .order small { opacity: 0.8; }
-.orders .order .actions { display: flex; gap: 8px; }
 
 /* Simulador */
 .tabs { display: flex; gap: 8px; margin: 6px 0 8px; }

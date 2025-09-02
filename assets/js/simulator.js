@@ -17,8 +17,6 @@
   position: null, // { side: 'long'|'short', qty, entry, margin }
   timer: null,
   tif: 'GTC',
-  orderType: 'market', // market | limit | stop
-  orders: [],
   };
 
   function parsePair(pair) {
@@ -93,9 +91,6 @@
       document.querySelector(`[data-order-tab="${mode}"]`)?.classList.add('active');
       const isLimit = mode === 'limit';
       el('[data-field-limit]').style.display = isLimit ? '' : 'none';
-      const isStop = mode === 'stop';
-      el('[data-field-stop]').style.display = isStop ? '' : 'none';
-      state.orderType = mode;
     };
     document.querySelectorAll('[data-order-tab]').forEach(b => b.addEventListener('click', () => setMode(b.getAttribute('data-order-tab'))));
     setMode('market');
@@ -103,14 +98,9 @@
     const toast = (msg) => {
       console.log('[SIM]', msg);
     };
-    el('#buyBtn').addEventListener('click', () => placeOrder('long'));
-    el('#sellBtn').addEventListener('click', () => placeOrder('short'));
+  el('#buyBtn').addEventListener('click', () => openPosition('long'));
+  el('#sellBtn').addEventListener('click', () => openPosition('short'));
   el('#closePos').addEventListener('click', closePosition);
-    el('#tpls').addEventListener('change', () => {
-      const on = el('#tpls').checked;
-      el('#tplsFields').style.display = on ? '' : 'none';
-    });
-    el('#cancelAll').addEventListener('click', () => { state.orders = []; renderOrders(); });
 
     // Ouvir mudanças de par vindas do gráfico/UI
     window.addEventListener('pairChange', async (ev) => {
@@ -148,42 +138,6 @@
     state.position = { side, qty, entry: price, margin };
     state.balance -= margin; if (state.balance < 0) state.balance = 0;
     renderPosition();
-  }
-
-  function placeOrder(side) {
-    const qty = Number(el('#qty').value || 0);
-    if (!qty) return;
-    const now = Date.now();
-    const base = {
-      id: 'o' + now,
-      pair: state.pair,
-      side,
-      qty,
-      tif: state.tif,
-      reduceOnly: el('#reduce').checked,
-      tp: el('#tpls').checked ? Number(el('#tp').value || 0) : 0,
-      sl: el('#tpls').checked ? Number(el('#sl').value || 0) : 0,
-      status: 'open',
-    };
-
-    if (state.orderType === 'market') {
-      el('#price').value = state.price;
-      updateEstimates();
-      openPosition(side);
-      return;
-    }
-
-    if (state.orderType === 'limit') {
-      const limit = Number(el('#price').value || 0);
-      if (!limit) return;
-      state.orders.push({ ...base, type: 'limit', limit });
-    } else if (state.orderType === 'stop') {
-      const stop = Number(el('#stopPrice').value || 0);
-      const limit = Number(el('#limitAfterStop').value || 0);
-      if (!stop || !limit) return;
-      state.orders.push({ ...base, type: 'stop', stop, limit });
-    }
-    renderOrders();
   }
 
   function closePosition() {
@@ -226,52 +180,10 @@
     if (data.price) state.price = data.price;
     el('#refPrice').textContent = state.price ? `${fmt(state.price, state.quote)} / ${state.quote}` : '—';
     if (state.position) renderPosition();
-  matchOrders();
   }
   function startTicker() {
     if (state.timer) clearInterval(state.timer);
     state.timer = setInterval(tick, 2500);
     tick();
-  }
-
-  function matchOrders() {
-    if (!state.orders.length || !state.price) return;
-    const rest = [];
-    for (const o of state.orders) {
-      if (o.type === 'limit') {
-        const hit = o.side === 'long' ? state.price <= o.limit : state.price >= o.limit;
-        if (hit) { el('#price').value = o.limit; updateEstimates(); openPosition(o.side); continue; }
-      } else if (o.type === 'stop') {
-        const trig = o.side === 'long' ? state.price >= o.stop : state.price <= o.stop;
-        if (trig) { el('#price').value = o.limit; updateEstimates(); openPosition(o.side); continue; }
-      }
-      rest.push(o);
-    }
-    state.orders = rest;
-    renderOrders();
-  }
-
-  function renderOrders() {
-    const box = el('#orders');
-    const list = el('#ordersList');
-    if (!list) return;
-    list.innerHTML = '';
-    if (!state.orders.length) { box.style.display = 'none'; return; }
-    box.style.display = '';
-    for (const o of state.orders) {
-      const row = document.createElement('div');
-      row.className = 'order';
-      const priceTxt = o.type === 'limit' ? o.limit : `${o.stop} → ${o.limit}`;
-      row.innerHTML = `<div><strong>${o.side.toUpperCase()}</strong> <small>${o.type}</small><br/><small>${o.qty} ${state.base} @ ${priceTxt}</small></div>`;
-      const actions = document.createElement('div');
-      actions.className = 'actions';
-      const cancel = document.createElement('button');
-      cancel.className = 'btn btn--ghost';
-      cancel.textContent = 'Cancelar';
-      cancel.addEventListener('click', () => { state.orders = state.orders.filter(x => x.id !== o.id); renderOrders(); });
-      actions.appendChild(cancel);
-      row.appendChild(actions);
-      list.appendChild(row);
-    }
   }
 })();

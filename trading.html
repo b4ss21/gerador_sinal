@@ -22,7 +22,7 @@
       <div class="container grid grid--2">
         <section class="panel">
           <header class="panel__header">
-            <h2>BTC/BRL</h2>
+            <h2 id="pairTitle">BTC/BRL</h2>
             <div class="panel__actions">
               <button class="chip" data-time="1m">1m</button>
               <button class="chip" data-time="5m">5m</button>
@@ -30,7 +30,22 @@
               <button class="chip" data-time="1h">1h</button>
             </div>
           </header>
-          <iframe class="chart" title="Chart" srcdoc="<style>html,body{margin:0;height:100%}body{display:grid;place-items:center;background:#0b0f1a;color:#fff;font:14px system-ui}</style><body>Coloque seu gráfico aqui</body>"></iframe>
+          <div id="tv_chart" class="tv-chart" aria-label="Gráfico"></div>
+          <section class="panel panel--sub">
+            <header class="panel__header">
+              <h3>Mercados</h3>
+            </header>
+            <div class="markets">
+              <div class="markets__list" id="marketsList">
+                <!-- PARES PADRÃO -->
+                <button class="chip" data-pair="BTC/BRL">BTC/BRL</button>
+                <button class="chip" data-pair="ETH/BRL">ETH/BRL</button>
+                <button class="chip" data-pair="SOL/BRL">SOL/BRL</button>
+                <button class="chip" data-pair="BTC/USDT">BTC/USDT</button>
+                <button class="chip" data-pair="ETH/USDT">ETH/USDT</button>
+              </div>
+            </div>
+          </section>
         </section>
         <aside class="panel">
           <header class="panel__header">
@@ -61,5 +76,8 @@
 
   <script src="assets/js/ui.js" defer></script>
   <script src="assets/js/auth.js" defer></script>
+    <!-- TradingView Widget -->
+    <script src="https://s3.tradingview.com/tv.js"></script>
+    <script src="assets/js/trading.js" defer></script>
   </body>
   </html>

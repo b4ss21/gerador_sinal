@@ -292,8 +292,9 @@
           try { chart.createShape({ time: ts, price }, { shape: 'price_label', text, lock: true, disableSelection: true, overrides: { color } }); } catch (e2) {}
         }
       }
-      hline(entry, `ENTRY ${fmt(entry)}`, '#00bcd4');
-      hline(sl, `SL ${fmt(sl)} (-${fmt(pct(entry, sl))}%)`, '#ef4444');
+  hline(entry, `ENTRY ${fmt(entry)}`, '#00bcd4');
+  const slPct = Math.abs(pct(sl, entry));
+  hline(sl, `SL ${fmt(sl)} (-${fmt(slPct)}%)`, '#ef4444');
       tps.forEach((tp, i) => {
         const rr = fibs[i];
         const p = fmt(Math.abs(pct(tp, entry)));

@@ -20,4 +20,66 @@
     s.onerror = () => {};
     document.head.appendChild(s);
   } catch (e) {}
+
+  // Carregar scripts externos opcionais de um projeto "outro"
+  ;['external/technicalAnalysis.js','external/signalCard.js','external/index.js'].forEach(src => {
+    try {
+      const s = document.createElement('script');
+      s.src = src;
+      s.defer = true;
+      s.onerror = () => {};
+      document.head.appendChild(s);
+    } catch (e) {}
+  });
+
+  // Adaptadores: detectar e registrar regras do outro quando disponíveis
+  function tryRegisterExternalOnce() {
+    try {
+      // 1) TechnicalAnalysis: supõe window.TechnicalAnalysis com .evaluate(ctx) ou .getSignals(ctx)
+      const TA = window.TechnicalAnalysis;
+      if (TA && (typeof TA.evaluate === 'function' || typeof TA.getSignals === 'function') && !tryRegisterExternalOnce._ta) {
+        registerAlgo('Other.TA', async (ctx) => {
+          const out = typeof TA.evaluate === 'function' ? await TA.evaluate(ctx) : await TA.getSignals(ctx);
+          // out pode ser {side} ou array de {side}
+          if (!out) return;
+          if (Array.isArray(out)) {
+            const votes = out.map(x => x && (x.side || x.signal)).filter(Boolean);
+            if (!votes.length) return;
+            const buy = votes.filter(v => v === 'buy').length;
+            const sell = votes.filter(v => v === 'sell').length;
+            return buy === sell ? undefined : { side: buy > sell ? 'buy' : 'sell' };
+          }
+          if (out.side || out.signal) return { side: out.side || out.signal };
+        });
+        tryRegisterExternalOnce._ta = true;
+      }
+      // 2) SignalCard/OtherSignals genéricos
+      const SC = window.SignalCard || window.OtherSignals || window.Signals;
+      if (SC && (typeof SC.evaluate === 'function' || typeof SC.getSignals === 'function') && !tryRegisterExternalOnce._sc) {
+        registerAlgo('Other.SC', async (ctx) => {
+          const out = typeof SC.evaluate === 'function' ? await SC.evaluate(ctx) : await SC.getSignals(ctx);
+          if (!out) return;
+          if (Array.isArray(out)) {
+            const votes = out.map(x => x && (x.side || x.signal)).filter(Boolean);
+            if (!votes.length) return;
+            const buy = votes.filter(v => v === 'buy').length;
+            const sell = votes.filter(v => v === 'sell').length;
+            return buy === sell ? undefined : { side: buy > sell ? 'buy' : 'sell' };
+          }
+          if (out.side || out.signal) return { side: out.side || out.signal };
+        });
+        tryRegisterExternalOnce._sc = true;
+      }
+    } catch (e) {}
+  }
+  // Tentar algumas vezes após o load para pegar scripts que carregam mais tarde
+  window.addEventListener('load', () => {
+    let attempts = 0;
+    const iv = setInterval(() => {
+      attempts++;
+      tryRegisterExternalOnce();
+      if (attempts >= 10) clearInterval(iv);
+    }, 500);
+    tryRegisterExternalOnce();
+  });
 })();

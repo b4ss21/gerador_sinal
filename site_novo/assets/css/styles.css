@@ -121,4 +121,5 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 .check { display: inline-flex; align-items: center; gap: 8px; }
 .link { color: #7CB7FF; text-decoration: none; }
 .link:hover { text-decoration: underline; }
+.error { color: #ff6b6b; font-size: 14px; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }

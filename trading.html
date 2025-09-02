@@ -89,6 +89,16 @@
         <button class="btn btn--mini" type="button" id="bbo">BBO</button>
               </div>
             </label>
+            <div class="form__row" data-field-stop style="display:none;gap:10px">
+              <label class="field w-100">
+                <span>Stop</span>
+                <input id="stopPrice" type="number" step="0.01" placeholder="Stop" />
+              </label>
+              <label class="field w-100">
+                <span>Limite</span>
+                <input id="limitAfterStop" type="number" step="0.01" placeholder="Limite após Stop" />
+              </label>
+            </div>
 
             <label class="field">
               <span>Quantidade</span>
@@ -112,6 +122,17 @@
                   <option value="FOK">FOK</option>
                 </select>
               </div>
+            </div>
+
+            <div class="form__row" id="tplsFields" style="display:none;gap:10px">
+              <label class="field w-100">
+                <span>Take Profit</span>
+                <input id="tp" type="number" step="0.01" placeholder="Preço de TP" />
+              </label>
+              <label class="field w-100">
+                <span>Stop Loss</span>
+                <input id="sl" type="number" step="0.01" placeholder="Preço de SL" />
+              </label>
             </div>
 
             <div class="actions">
@@ -142,6 +163,14 @@
               <div class="form__row"><span class="muted">Margem</span><strong id="posMargin">—</strong></div>
               <div class="form__row"><span class="muted">PnL / ROE</span><strong id="posPnl" class="pnl">—</strong></div>
               <div class="actions"><button class="btn w-100" type="button" id="closePos">Fechar posição</button></div>
+            </div>
+
+            <div class="card" id="orders" style="margin-top:12px; display:none">
+              <div class="form__row" style="justify-content:space-between;align-items:center">
+                <strong>Ordens Abertas</strong>
+                <button class="btn btn--ghost" type="button" id="cancelAll">Cancelar todas</button>
+              </div>
+              <div id="ordersList" class="orders"></div>
             </div>
           </form>
         </aside>

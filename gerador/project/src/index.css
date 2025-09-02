@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono:wght@400&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #000;
+  color: #39ff14;
+  font-family: 'Share Tech Mono', 'Courier New', monospace;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar for Matrix theme */
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-track-gray-900 {
+  scrollbar-color: #39ff14 #111;
+}
+
+.scrollbar-thumb-green-400 {
+  scrollbar-color: #39ff14 #111;
+}
+
+/* Webkit scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #111;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #39ff14;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4eff29;
+}
+
+/* Matrix rain animation effect */
+.matrix-rain {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    linear-gradient(transparent 70%, #39ff1405 70%),
+    linear-gradient(90deg, transparent 70%, #39ff1405 70%);
+  background-size: 20px 20px;
+  animation: matrix-fall 20s linear infinite;
+}
+
+@keyframes matrix-fall {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Glowing text effect */
+h1 {
+  text-shadow: 
+    0 0 5px #39ff14,
+    0 0 10px #39ff14,
+    0 0 15px #39ff14;
+}
+
+/* Glowing border animation */
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 20px #39ff14;
+  }
+  50% {
+    box-shadow: 0 0 30px #39ff14, 0 0 40px #39ff14;
+  }
+}
+
+.border-green-400 {
+  animation: glow 3s ease-in-out infinite;
+}
+
+/* Terminal cursor effect */
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor::after {
+  content: '█';
+  animation: cursor-blink 1s infinite;
+  margin-left: 2px;
+}
+
+/* Input focus effects */
+input:focus {
+  box-shadow: 0 0 10px #39ff14;
+}
+
+/* Button hover effects */
+button:hover {
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.3);
+}
+
+/* Signal card animations */
+@keyframes signal-appear {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.signal-card {
+  animation: signal-appear 0.5s ease-out;
+}

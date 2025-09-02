@@ -72,6 +72,13 @@
       calendar: false,
       studies: [],
     });
+    // Expor e avisar quando o gráfico estiver pronto
+    try {
+      window.TVWidget = state.widget;
+      state.widget.onChartReady(function() {
+        try { window.dispatchEvent(new CustomEvent('tvChartReady', { detail: { pair: state.pair, interval: state.interval } })); } catch (e) {}
+      });
+    } catch (e) {}
   }
 
   function selectChip(groupSelector, target) {
@@ -85,6 +92,7 @@
       btn.addEventListener('click', () => {
         state.interval = btn.getAttribute('data-time');
         selectChip('[data-time]', btn);
+  try { window.dispatchEvent(new CustomEvent('intervalChange', { detail: { interval: state.interval } })); } catch (e) {}
         if (state.widget) {
           const tvInterval = toTVInterval(state.interval);
           try { state.widget.chart().setResolution(tvInterval); } catch (e) { initTV(); }
@@ -100,6 +108,7 @@
         state.pair = btn.getAttribute('data-pair');
         selectChip('[data-pair]', btn);
         setTitle();
+  try { window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair } })); } catch (e) {}
         if (state.widget) {
           const symbol = toTVSymbol(state.pair);
           try { state.widget.chart().setSymbol(symbol); } catch (e) { initTV(); }
@@ -123,5 +132,10 @@
     setTitle();
     bindUI();
     initTV();
+    // Eventos iniciais
+    try {
+      window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair } }));
+      window.dispatchEvent(new CustomEvent('intervalChange', { detail: { interval: state.interval } }));
+    } catch (e) {}
   });
 })();

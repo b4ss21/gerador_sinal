@@ -3,6 +3,7 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; }
 body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol'; background: var(--bg); color: var(--text); }
+.container { width: min(1160px, 94%); margin-inline: auto; padding-left: 8px; padding-right: 22px; }
 .section { padding: 32px 0; }
 .section--center { display: grid; place-items: center; min-height: calc(100vh - 72px); }
 .t-center { text-align: center; }
@@ -33,10 +34,11 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 .link { color: #7CB7FF; text-decoration: none; }
 .link:hover { text-decoration: underline; }
 .error { color: #ff6b6b; font-size: 14px; }
-.grid { display: grid; gap: 16px; }
-.grid--2 { grid-template-columns: 1fr 320px; }
+.grid { display: grid; gap: 18px; }
+.grid--2 { grid-template-columns: 1fr 340px; }
 @media (max-width: 960px) { .grid--2 { grid-template-columns: 1fr; } }
 .panel { background: #141A2A; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; overflow: hidden; }
+.panel .form { padding: 0 10px 12px; }
 .panel__header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.08); }
 .panel__actions { display: flex; gap: 8px; }
 .chip { padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #fff; cursor: pointer; }
@@ -51,8 +53,9 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 /* Simulador */
 .tabs { display: flex; gap: 8px; margin: 6px 0 8px; }
 .input-append { position: relative; }
-.input-append input { width: 100%; padding-right: 54px; }
+.input-append input { width: 100%; padding-right: 96px; }
 .input-append .append { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); opacity: 0.8; font-size: 12px; }
+.input-append .btn--mini { position: absolute; right: 40px; top: 50%; transform: translateY(-50%); padding: 4px 6px; font-size: 12px; border-radius: 6px; }
 input[type="range"] { width: 100%; accent-color: #7CB7FF; }
 .w-100 { width: 100%; }
 .btn--buy { --btn-bg: #17b26a; --btn-bd: #17b26a; }

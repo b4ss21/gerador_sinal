@@ -16,6 +16,7 @@
     balance: 12000, // saldo demo em moeda de cotação
   position: null, // { side: 'long'|'short', qty, entry, margin }
   timer: null,
+  tif: 'GTC',
   };
 
   function parsePair(pair) {
@@ -74,6 +75,8 @@
     });
     el('#qty').addEventListener('input', updateEstimates);
     el('#price').addEventListener('input', updateEstimates);
+  el('#tif').addEventListener('change', () => { state.tif = el('#tif').value; });
+  el('#bbo').addEventListener('click', () => { if (state.price) { el('#price').value = state.price; updateEstimates(); } });
     el('#qtyRange').addEventListener('input', () => {
       // range define % do saldo convertido em notional estimado
       const pct = Number(el('#qtyRange').value) / 100; // 0..1

@@ -60,6 +60,27 @@
     }
     return out;
   }
+  function ATR(bars, p = 14) {
+    const out = Array(bars.length).fill(null);
+    let trQueue = [];
+    let prevClose = bars[0]?.c ?? null;
+    for (let i = 0; i < bars.length; i++) {
+      const b = bars[i];
+      const tr = Math.max(
+        b.h - b.l,
+        prevClose != null ? Math.abs(b.h - prevClose) : 0,
+        prevClose != null ? Math.abs(b.l - prevClose) : 0
+      );
+      prevClose = b.c;
+      trQueue.push(tr);
+      if (trQueue.length > p) trQueue.shift();
+      if (trQueue.length === p) {
+        const sum = trQueue.reduce((a, v) => a + v, 0);
+        out[i] = sum / p;
+      }
+    }
+    return out;
+  }
   function RSI(closes, p = 14) {
     const out = Array(closes.length).fill(null);
     let avgGain = 0, avgLoss = 0;
@@ -150,6 +171,25 @@
     return b;
   }
 
+  function recentPivotLow(bars, lookback = 20) {
+    const L = bars.length;
+    let idx = -1, val = Infinity;
+    for (let i = Math.max(0, L - lookback); i < L; i++) {
+      if (bars[i].l < val) { val = bars[i].l; idx = i; }
+    }
+    return idx >= 0 ? { i: idx, price: val } : null;
+  }
+  function recentPivotHigh(bars, lookback = 20) {
+    const L = bars.length;
+    let idx = -1, val = -Infinity;
+    for (let i = Math.max(0, L - lookback); i < L; i++) {
+      if (bars[i].h > val) { val = bars[i].h; idx = i; }
+    }
+    return idx >= 0 ? { i: idx, price: val } : null;
+  }
+  function fmt(n) { return (n >= 1 ? n.toFixed(2) : n.toFixed(6)); }
+  function pct(a, b) { return ((a - b) / b) * 100; }
+
   async function analyzeAndDraw() {
     const chart = tvChart();
     if (!chart) return;
@@ -164,7 +204,8 @@
     const ema21 = EMA(closes, 21);
     const sma200 = SMA(closes, 200);
     const bb = Bollinger(closes, 20, 2);
-    const stoch = StochRSI(closes, 14, 14, 3);
+  const stoch = StochRSI(closes, 14, 14, 3);
+  const atr = ATR(bars, 14);
 
     // Tendência via BTCUSDT EMA9>EMA21
     const refBars = await fetchKlines('BTCUSDT', tf, 200);
@@ -182,8 +223,21 @@
     const stUp = stoch[last] != null && stoch[last] > 20 && stoch[last - 1] != null && stoch[last - 1] <= 20;
     const stDown = stoch[last] != null && stoch[last] < 80 && stoch[last - 1] != null && stoch[last - 1] >= 80;
 
-    const buy = (cross.up || stUp || nearLower) && (refUp || state.pair.startsWith('BTC')) && (hh || cross.up);
-    const sell = (cross.down || stDown || nearUpper) && (!refUp || state.pair.startsWith('BTC')) && (lh || cross.down);
+    const baseBuy = (cross.up || stUp || nearLower) && (refUp || state.pair.startsWith('BTC')) && (hh || cross.up);
+    const baseSell = (cross.down || stDown || nearUpper) && (!refUp || state.pair.startsWith('BTC')) && (lh || cross.down);
+
+    // Consultar algoritmos externos (opcional)
+    let extVotes = [];
+    try {
+      if (window.SignalAlgos && typeof window.SignalAlgos.runAll === 'function') {
+        const ctx = { pair: state.pair, tf, bars, closes, highs, lows: bars.map(b => b.l), time: bars.at(-1).t, price: closes.at(-1) };
+        extVotes = await window.SignalAlgos.runAll(ctx);
+      }
+    } catch (e) {}
+    const votesBuy = extVotes.filter(v => (v.side || v.signal) === 'buy').length;
+    const votesSell = extVotes.filter(v => (v.side || v.signal) === 'sell').length;
+    const buy = baseBuy || (votesBuy > votesSell && votesBuy > 0);
+    const sell = baseSell || (votesSell > votesBuy && votesSell > 0);
 
     // Evitar redesenhar igual
     const key = `${state.pair}|${state.interval}|${bars[last].t}`;
@@ -204,19 +258,62 @@
 
     const ts = Math.floor(bars[last].t / 1000);
     const priceAt = closes[last];
-    if (buy) {
-      try { chart.createShape({ time: ts, price: priceAt }, { shape: 'arrow_up', text: 'BUY', lock: true, disableSelection: true, overrides: { color: '#17b26a' } }); } catch (e) {}
-    }
-    if (sell) {
-      try { chart.createShape({ time: ts, price: priceAt }, { shape: 'arrow_down', text: 'SELL', lock: true, disableSelection: true, overrides: { color: '#ef4444' } }); } catch (e) {}
+    let overlayLines = [];
+    if (buy || sell) {
+      const isLong = buy && !sell;
+      const atrVal = atr[last] || (closes[last] * 0.005);
+      const pivotLow = recentPivotLow(bars, 30);
+      const pivotHigh = recentPivotHigh(bars, 30);
+      let entry = priceAt;
+      let sl, r;
+      if (isLong) {
+        sl = pivotLow ? Math.min(pivotLow.price, entry - atrVal) : entry - atrVal;
+        r = Math.max(0.0000001, entry - sl);
+      } else {
+        sl = pivotHigh ? Math.max(pivotHigh.price, entry + atrVal) : entry + atrVal;
+        r = Math.max(0.0000001, sl - entry);
+      }
+      const fibs = [0.618, 1.0, 1.618];
+      const tps = fibs.map(f => isLong ? entry + f * r : entry - f * r);
+
+      try {
+        chart.createShape({ time: ts, price: priceAt }, {
+          shape: isLong ? 'arrow_up' : 'arrow_down',
+          text: isLong ? 'BUY' : 'SELL',
+          lock: true, disableSelection: true,
+          overrides: { color: isLong ? '#17b26a' : '#ef4444' }
+        });
+      } catch (e) {}
+
+      function hline(price, text, color) {
+        try {
+          chart.createShape({ time: ts, price }, { shape: 'horizontal_line', text, lock: true, disableSelection: true, overrides: { color } });
+        } catch (e) {
+          try { chart.createShape({ time: ts, price }, { shape: 'price_label', text, lock: true, disableSelection: true, overrides: { color } }); } catch (e2) {}
+        }
+      }
+      hline(entry, `ENTRY ${fmt(entry)}`, '#00bcd4');
+      hline(sl, `SL ${fmt(sl)} (-${fmt(pct(entry, sl))}%)`, '#ef4444');
+      tps.forEach((tp, i) => {
+        const rr = fibs[i];
+        const p = fmt(Math.abs(pct(tp, entry)));
+        hline(tp, `TP${i + 1} ${fmt(tp)} (${rr.toFixed(3)}R, ${p}%)`, '#17b26a');
+      });
+
+      overlayLines = [{ k: 'ENTRY', v: entry }, { k: 'SL', v: sl }].concat(tps.map((v, i) => ({ k: `TP${i + 1}`, v })));
     }
 
     // Fallback visual (badge) caso shapes não apareçam
     const badge = ensureBadge();
     if (badge) {
-      if (buy) { badge.textContent = 'BUY'; badge.dataset.side = 'buy'; badge.style.display = 'inline-flex'; }
-      else if (sell) { badge.textContent = 'SELL'; badge.dataset.side = 'sell'; badge.style.display = 'inline-flex'; }
-      else { badge.style.display = 'none'; }
+      if (buy || sell) {
+        const isLong = buy && !sell;
+        const linesTxt = overlayLines.map(x => `${x.k}: ${fmt(x.v)}`).join(' | ');
+        const voteTxt = (extVotes && extVotes.length) ? ` • algos: ${extVotes.map(v => v.name + ':' + (v.side || v.signal || '?')).join(', ')}` : '';
+        badge.textContent = `${isLong ? 'BUY' : 'SELL'} • ${linesTxt}${voteTxt}`;
+        badge.dataset.side = isLong ? 'buy' : 'sell';
+        badge.style.display = 'inline-flex';
+      } else { badge.style.display = 'none'; }
     }
   }
 

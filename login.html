@@ -1,0 +1,52 @@
+<!-- ... conteúdo idêntico a site_novo/login.html ... -->
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Entrar • Gerador de sinais pro</title>
+    <meta name="description" content="Faça login para acessar todos os recursos." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="index.html"><img src="assets/images/logo.png" alt="Gerador de sinais pro" /></a>
+        <nav class="nav">
+          <details class="lang">
+            <summary>BR</summary>
+            <ul>
+              <li><a href="#" aria-current="true">BR</a></li>
+              <li><a href="#">EN</a></li>
+            </ul>
+          </details>
+          <a class="btn btn--ghost" href="register.html">Criar conta</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section section--center">
+      <div class="card card--auth">
+        <h1 class="card__title">Entrar na conta</h1>
+        <form class="form" onsubmit="return false;">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" placeholder="exemplo@email.com" required />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input type="password" placeholder="Sua senha" required />
+          </label>
+          <div class="form__row">
+            <label class="check"><input type="checkbox" /> <span>Lembrar-me</span></label>
+            <a class="link" href="#">Esqueceu sua senha?</a>
+          </div>
+          <button class="btn btn--primary w-100" type="submit">Entrar</button>
+          <p class="muted t-center">Não tem uma conta? <a class="link" href="register.html">Criar conta</a></p>
+        </form>
+      </div>
+    </main>
+
+    <script src="assets/js/ui.js" defer></script>
+  </body>
+  </html>

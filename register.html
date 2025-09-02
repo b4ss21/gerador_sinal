@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Criar conta • Gerador de sinais pro</title>
+    <meta name="description" content="Crie sua conta para começar a negociar." />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__inner">
+        <a class="brand" href="index.html"><img src="assets/images/logo.png" alt="Gerador de sinais pro" /></a>
+        <nav class="nav">
+          <a class="btn btn--ghost" href="login.html">Entrar</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section section--center">
+      <div class="card card--auth">
+        <h1 class="card__title">Criar conta</h1>
+        <form class="form" onsubmit="return false;">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" placeholder="exemplo@email.com" required />
+          </label>
+          <label class="field">
+            <span>Senha</span>
+            <input type="password" placeholder="Mínimo 8 caracteres" required />
+          </label>
+          <label class="field">
+            <span>Confirmar senha</span>
+            <input type="password" placeholder="Repita a senha" required />
+          </label>
+          <button class="btn btn--primary w-100" type="submit">Criar conta</button>
+          <p class="muted t-center">Já tem conta? <a class="link" href="login.html">Entrar</a></p>
+        </form>
+      </div>
+    </main>
+
+    <script src="assets/js/ui.js" defer></script>
+  </body>
+  </html>

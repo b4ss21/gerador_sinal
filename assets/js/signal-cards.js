@@ -105,9 +105,15 @@
           window.TVControls.setPair(pair);
           window.TVControls.setInterval(tf);
         }
-        setTimeout(()=>{
+        setTimeout(async ()=>{
           const detail={ entry:sig.entry, sl:sig.sl, tps:sig.tps, time:sig.time, side:sig.side };
           window.dispatchEvent(new CustomEvent('showSignalOverlay',{detail}));
+          // Alternativa: gráfico lightweight com marcador no candle
+          if (window.LWChart) {
+            window.LWChart.show();
+            await window.LWChart.set(pair, tf);
+            window.LWChart.mark(Math.floor(sig.time/1000), sig.entry, sig.side==='buy'?'buy':'sell');
+          }
         }, 800);
       } catch(e){}
     });

@@ -70,6 +70,7 @@ body {
 .header__inner { display: flex; align-items: center; justify-content: space-between; height: 72px; }
 .brand img { height: 44px; width: auto; display: block; }
 .nav { display: flex; gap: 12px; align-items: center; }
+.header__inner > .nav { margin-left: auto; }
 .lang { position: relative; }
 .lang > summary { list-style: none; cursor: pointer; padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12); }
 .lang[open] ul { display: block; }

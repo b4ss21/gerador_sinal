@@ -5,6 +5,7 @@
     interval: '1m',
     timer: null,
     lastDrawKey: '',
+  lastRunAt: 0,
   };
 
   function tvChart() {
@@ -23,18 +24,30 @@
   }
   function toBinance(pair) {
     const map = {
-      'BTC/USDT': 'BTCUSDT', 'ETH/USDT': 'ETHUSDT', 'SOL/USDT': 'SOLUSDT',
+  'BTC/USDT': 'BTCUSDT', 'ETH/USDT': 'ETHUSDT', 'SOL/USDT': 'SOLUSDT', 'ONDO/USDT': 'ONDOUSDT', 'PAXG/USDT': 'PAXGUSDT', 'WIF/USDT': 'WIFUSDT', 'BCH/USDT': 'BCHUSDT',
       'BTC/BRL': 'BTCBRL', 'ETH/BRL': 'ETHBRL', 'SOL/BRL': 'SOLBRL',
     };
     return map[pair] || 'BTCUSDT';
   }
 
   async function fetchKlines(symbol, interval, limit = 500) {
-    const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    // Cada item: [ openTime, open, high, low, close, volume, closeTime, ... ]
-    return data.map(d => ({ t: d[0], o: +d[1], h: +d[2], l: +d[3], c: +d[4], v: +d[5] }));
+    const urls = [
+      `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+      `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+    ];
+    let lastErr;
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        if (!res.ok) { lastErr = new Error('HTTP '+res.status); continue; }
+        const data = await res.json();
+        if (!Array.isArray(data)) { lastErr = new Error('Formato inválido'); continue; }
+        return data.map(d => ({ t: d[0], o: +d[1], h: +d[2], l: +d[3], c: +d[4], v: +d[5] }));
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw lastErr || new Error('Falha ao buscar klines');
   }
 
   // Indicadores
@@ -171,6 +184,21 @@
     return b;
   }
 
+  function ensureSignalCard() {
+    const host = document.getElementById('tv_chart');
+    if (!host) return null;
+    let c = host.querySelector('.signal-card');
+    if (!c) {
+      c = document.createElement('div');
+      c.className = 'signal-card';
+      const arrow = document.createElement('span'); arrow.className='arrow';
+      const text = document.createElement('span'); text.className='text';
+      c.appendChild(arrow); c.appendChild(text);
+      host.appendChild(c);
+    }
+    return c;
+  }
+
   function recentPivotLow(bars, lookback = 20) {
     const L = bars.length;
     let idx = -1, val = Infinity;
@@ -190,13 +218,71 @@
   function fmt(n) { return (n >= 1 ? n.toFixed(2) : n.toFixed(6)); }
   function pct(a, b) { return ((a - b) / b) * 100; }
 
+  function drawOverlay(chart, ts, priceAt, isLong, entry, sl, tps) {
+    // Apagar shapes anteriores e desenhar
+    try { if (chart && typeof chart.removeAllShapes === 'function') chart.removeAllShapes(); } catch (e) {}
+    try {
+      if (chart && typeof chart.createShape === 'function') {
+        chart.createShape({ time: ts, price: priceAt }, {
+          shape: isLong ? 'arrow_up' : 'arrow_down',
+          text: isLong ? 'COMPRA' : 'VENDA',
+          lock: true, disableSelection: true,
+          overrides: { color: isLong ? '#17b26a' : '#ef4444' }
+        });
+      }
+    } catch (e) {}
+    function hline(price, text, color) {
+      try {
+        if (chart && typeof chart.createShape === 'function') {
+          chart.createShape({ time: ts, price }, { shape: 'horizontal_line', text, lock: true, disableSelection: true, overrides: { color } });
+        }
+      } catch (e) {
+        try { if (chart && typeof chart.createShape === 'function') chart.createShape({ time: ts, price }, { shape: 'price_label', text, lock: true, disableSelection: true, overrides: { color } }); } catch (e2) {}
+      }
+    }
+    hline(entry, `ENTRADA ${fmt(entry)}`, '#00bcd4');
+    const slPct = Math.abs(pct(sl, entry));
+    hline(sl, `STOP ${fmt(sl)} (-${fmt(slPct)}%)`, '#ef4444');
+    const fibs = [0.618, 1.0, 1.618];
+    tps.forEach((tp, i) => {
+      const rr = fibs[i] || (i+1);
+      const p = fmt(Math.abs(pct(tp, entry)));
+      hline(tp, `ALVO${i + 1} ${fmt(tp)} (${Number(rr).toFixed(3)}R, ${p}%)`, '#17b26a');
+    });
+
+    // Badge e card
+    const badge = ensureBadge();
+    const card = ensureSignalCard();
+    if (badge) {
+      badge.textContent = `${isLong ? 'COMPRAR' : 'VENDER'} • ENTRADA: ${fmt(entry)} | STOP: ${fmt(sl)} | ${tps.map((v,i)=>`ALVO${i+1}: ${fmt(v)}`).join(' | ')}`;
+      badge.dataset.side = isLong ? 'buy' : 'sell';
+      badge.style.display = 'inline-flex';
+    }
+    if (card) {
+      card.dataset.side = isLong ? 'buy' : 'sell';
+      card.querySelector('.arrow').textContent = isLong ? '▲' : '▼';
+      card.querySelector('.text').textContent = (isLong ? 'COMPRAR' : 'VENDER') + ` • ENTRADA: ${fmt(entry)} | STOP: ${fmt(sl)} | ${tps.map((v,i)=>`ALVO${i+1}: ${fmt(v)}`).join(' | ')}`;
+      card.style.display = 'inline-flex';
+    }
+  }
+
   async function analyzeAndDraw() {
     const chart = tvChart();
-    if (!chart) return;
     const sym = toBinance(state.pair);
     const tf = mapInterval(state.interval);
-    const bars = await fetchKlines(sym, tf, 500);
-    if (!bars.length) return;
+    let bars;
+    try {
+      bars = await fetchKlines(sym, tf, 500);
+    } catch (e) {
+      const b = ensureBadge();
+      if (b) { b.style.display='inline-flex'; b.dataset.side=''; b.textContent = `Erro ao buscar dados (${String(e && e.message || e)}).`; }
+      return;
+    }
+    if (!bars.length) {
+      const b = ensureBadge();
+      if (b) { b.style.display='inline-flex'; b.dataset.side=''; b.textContent = 'Sem dados de mercado para este par/timeframe.'; }
+      return;
+    }
 
     const closes = bars.map(b => b.c);
     const highs = bars.map(b => b.h);
@@ -208,7 +294,8 @@
   const atr = ATR(bars, 14);
 
     // Tendência via BTCUSDT EMA9>EMA21
-    const refBars = await fetchKlines('BTCUSDT', tf, 200);
+  let refBars = [];
+  try { refBars = await fetchKlines('BTCUSDT', tf, 200); } catch (e) { /* ignora, segue sem contexto */ }
     const refCloses = refBars.map(b => b.c);
     const refE9 = EMA(refCloses, 9), refE21 = EMA(refCloses, 21);
     const refUp = refE9.at(-1) > refE21.at(-1);
@@ -223,8 +310,8 @@
     const stUp = stoch[last] != null && stoch[last] > 20 && stoch[last - 1] != null && stoch[last - 1] <= 20;
     const stDown = stoch[last] != null && stoch[last] < 80 && stoch[last - 1] != null && stoch[last - 1] >= 80;
 
-    const baseBuy = (cross.up || stUp || nearLower) && (refUp || state.pair.startsWith('BTC')) && (hh || cross.up);
-    const baseSell = (cross.down || stDown || nearUpper) && (!refUp || state.pair.startsWith('BTC')) && (lh || cross.down);
+  const baseBuy = (cross.up || stUp || nearLower) && (refUp || state.pair.startsWith('BTC')) && (hh || cross.up);
+  const baseSell = (cross.down || stDown || nearUpper) && (!refUp || state.pair.startsWith('BTC')) && (lh || cross.down);
 
     // Consultar algoritmos externos (opcional)
     let extVotes = [];
@@ -255,8 +342,9 @@
     let buy = baseBuy;
     let sell = baseSell;
     if (!buy && !sell) {
-      if (sumBuy > sumSell && sumBuy >= 0.5) buy = true;
-      else if (sumSell > sumBuy && sumSell >= 0.5) sell = true;
+      const TH = 0.3; // mais sensível para aparecer com mais frequência
+      if (sumBuy > sumSell && sumBuy >= TH) buy = true;
+      else if (sumSell > sumBuy && sumSell >= TH) sell = true;
     }
 
     // Evitar redesenhar igual
@@ -264,16 +352,18 @@
     if (state.lastDrawKey === key) return;
     state.lastDrawKey = key;
 
-    // Limpar shapes antigos recentes para não poluir
-    try { chart.removeAllShapes(); } catch (e) {}
+  // Limpar shapes antigos recentes para não poluir (se API disponível)
+  try { if (chart && typeof chart.removeAllShapes === 'function') chart.removeAllShapes(); } catch (e) {}
 
     // Recriar estudos base (best-effort)
     try {
-      chart.createStudy('Moving Average Exponential', false, false, [9]);
-      chart.createStudy('Moving Average Exponential', false, false, [21]);
-      chart.createStudy('Bollinger Bands', false, false, [20, 2]);
-      chart.createStudy('Stochastic RSI', false, false, [14, 14, 3, 3, 14]);
-      chart.createStudy('Moving Average', false, false, [200]);
+      if (chart && typeof chart.createStudy === 'function') {
+        chart.createStudy('Moving Average Exponential', false, false, [9]);
+        chart.createStudy('Moving Average Exponential', false, false, [21]);
+        chart.createStudy('Bollinger Bands', false, false, [20, 2]);
+        chart.createStudy('Stochastic RSI', false, false, [14, 14, 3, 3, 14]);
+        chart.createStudy('Moving Average', false, false, [200]);
+      }
     } catch (e) {}
 
     const ts = Math.floor(bars[last].t / 1000);
@@ -297,46 +387,74 @@
       const tps = fibs.map(f => isLong ? entry + f * r : entry - f * r);
 
       try {
-        chart.createShape({ time: ts, price: priceAt }, {
-          shape: isLong ? 'arrow_up' : 'arrow_down',
-          text: isLong ? 'BUY' : 'SELL',
-          lock: true, disableSelection: true,
-          overrides: { color: isLong ? '#17b26a' : '#ef4444' }
-        });
+        if (chart && typeof chart.createShape === 'function') {
+          chart.createShape({ time: ts, price: priceAt }, {
+            shape: isLong ? 'arrow_up' : 'arrow_down',
+            text: isLong ? 'COMPRA' : 'VENDA',
+            lock: true, disableSelection: true,
+            overrides: { color: isLong ? '#17b26a' : '#ef4444' }
+          });
+        }
       } catch (e) {}
 
       function hline(price, text, color) {
         try {
-          chart.createShape({ time: ts, price }, { shape: 'horizontal_line', text, lock: true, disableSelection: true, overrides: { color } });
+          if (chart && typeof chart.createShape === 'function') {
+            chart.createShape({ time: ts, price }, { shape: 'horizontal_line', text, lock: true, disableSelection: true, overrides: { color } });
+          }
         } catch (e) {
-          try { chart.createShape({ time: ts, price }, { shape: 'price_label', text, lock: true, disableSelection: true, overrides: { color } }); } catch (e2) {}
+          try { if (chart && typeof chart.createShape === 'function') chart.createShape({ time: ts, price }, { shape: 'price_label', text, lock: true, disableSelection: true, overrides: { color } }); } catch (e2) {}
         }
       }
-  hline(entry, `ENTRY ${fmt(entry)}`, '#00bcd4');
-  const slPct = Math.abs(pct(sl, entry));
-  hline(sl, `SL ${fmt(sl)} (-${fmt(slPct)}%)`, '#ef4444');
+      hline(entry, `ENTRADA ${fmt(entry)}`, '#00bcd4');
+      const slPct = Math.abs(pct(sl, entry));
+      hline(sl, `STOP ${fmt(sl)} (-${fmt(slPct)}%)`, '#ef4444');
       tps.forEach((tp, i) => {
         const rr = fibs[i];
         const p = fmt(Math.abs(pct(tp, entry)));
-        hline(tp, `TP${i + 1} ${fmt(tp)} (${rr.toFixed(3)}R, ${p}%)`, '#17b26a');
+        hline(tp, `ALVO${i + 1} ${fmt(tp)} (${rr.toFixed(3)}R, ${p}%)`, '#17b26a');
       });
 
       overlayLines = [{ k: 'ENTRY', v: entry }, { k: 'SL', v: sl }].concat(tps.map((v, i) => ({ k: `TP${i + 1}`, v })));
     }
 
+    // Atualizar timestamp de execução
+    state.lastRunAt = Date.now();
+
     // Fallback visual (badge) caso shapes não apareçam
     const badge = ensureBadge();
-    if (badge) {
+    const card = ensureSignalCard();
+  if (badge) {
       if (buy || sell) {
         const isLong = buy && !sell;
         const linesTxt = overlayLines.map(x => `${x.k}: ${fmt(x.v)}`).join(' | ');
         const voteTxt = (extVotes && extVotes.length)
           ? ` • algos: ${extVotes.map(v => v.name + ':' + (v.side || v.signal || '?')).join(', ')} • ΣB:${sumBuy.toFixed(2)} ΣS:${sumSell.toFixed(2)}`
           : '';
-        badge.textContent = `${isLong ? 'BUY' : 'SELL'} • ${linesTxt}${voteTxt}`;
+        badge.textContent = `${isLong ? 'COMPRAR' : 'VENDER'} • ${linesTxt}${voteTxt}`;
         badge.dataset.side = isLong ? 'buy' : 'sell';
         badge.style.display = 'inline-flex';
-      } else { badge.style.display = 'none'; }
+        if (card) {
+          card.dataset.side = isLong ? 'buy' : 'sell';
+          card.querySelector('.arrow').textContent = isLong ? '▲' : '▼';
+      const info = overlayLines.length ? ` • ${overlayLines.map(x=>`${x.k}: ${fmt(x.v)}`).join(' | ')}` : '';
+      card.querySelector('.text').textContent = (isLong ? 'COMPRAR' : 'VENDER') + info;
+          card.style.display = 'inline-flex';
+        }
+      } else {
+        // Mostrar heartbeat mesmo sem sinal para indicar que a análise está ativa
+        const t = new Date(state.lastRunAt);
+        const hh = t.getHours().toString().padStart(2,'0');
+        const mm = t.getMinutes().toString().padStart(2,'0');
+        const ss = t.getSeconds().toString().padStart(2,'0');
+        const voteTxt = (extVotes && extVotes.length)
+          ? ` • ΣB:${sumBuy.toFixed(2)} ΣS:${sumSell.toFixed(2)}`
+          : '';
+        badge.textContent = `Sem sinal • ${state.pair} ${state.interval} • Atualizado ${hh}:${mm}:${ss}${voteTxt}`;
+        badge.dataset.side = '';
+        badge.style.display = 'inline-flex';
+        if (card) card.style.display = 'none';
+      }
     }
   }
 
@@ -349,8 +467,24 @@
   function ready(fn) { if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
 
   ready(() => {
-    window.addEventListener('pairChange', (ev) => { state.pair = ev.detail?.pair || 'BTC/USDT'; state.lastDrawKey = ''; schedule(); });
-    window.addEventListener('intervalChange', (ev) => { state.interval = ev.detail?.interval || '1m'; state.lastDrawKey = ''; schedule(); });
-    window.addEventListener('tvChartReady', () => schedule());
+  window.addEventListener('pairChange', (ev) => { state.pair = ev.detail?.pair || 'BTC/USDT'; state.lastDrawKey = ''; schedule(); });
+  window.addEventListener('intervalChange', (ev) => { state.interval = ev.detail?.interval || '1m'; state.lastDrawKey = ''; schedule(); });
+  window.addEventListener('tvChartReady', () => schedule());
+  // Fallback: iniciar mesmo sem eventos (ordem de scripts)
+  schedule();
+  // Reforçar após curto atraso para capturar TV pronta
+  setTimeout(schedule, 1500);
+  });
+
+  // Evento para desenhar overlay manual a partir de um cartão de sinal
+  window.addEventListener('showSignalOverlay', (ev) => {
+    const d = ev.detail || {};
+    if (!d || !d.entry || !d.sl || !d.tps || !d.time) return;
+    try {
+      const chart = tvChart();
+      const ts = Math.floor((d.time || Date.now()) / 1000);
+      drawOverlay(chart, ts, d.entry, d.side === 'buy', d.entry, d.sl, d.tps);
+      state.lastDrawKey = '' + Math.random(); // força redesenho no próximo ciclo
+    } catch (e) {}
   });
 })();

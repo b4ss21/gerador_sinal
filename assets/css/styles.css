@@ -48,6 +48,12 @@ input::placeholder { color: rgba(255,255,255,0.5); }
 
 /* Badge de sinais (fallback overlay) */
 #tv_chart { position: relative; }
-.signal-badge { position: absolute; top: 10px; left: 10px; background: rgba(20,26,42,0.92); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 8px 10px; border-radius: 10px; font-size: 12px; display: none; align-items: center; gap: 6px; z-index: 2; }
+.signal-badge { position: fixed; top: 10px; left: 10px; background: rgba(20,26,42,0.92); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 8px 10px; border-radius: 10px; font-size: 12px; display: none; align-items: center; gap: 6px; z-index: 2147483647; pointer-events: none; }
 .signal-badge[data-side="buy"] { border-color: rgba(23,178,106,0.6); box-shadow: 0 0 0 1px rgba(23,178,106,0.25) inset; }
 .signal-badge[data-side="sell"] { border-color: rgba(239,68,68,0.6); box-shadow: 0 0 0 1px rgba(239,68,68,0.25) inset; }
+
+/* Card grande de sinal estilo "COMPRAR/VENDER" */
+.signal-card { position: fixed; display: none; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; font-weight: 800; letter-spacing: 0.5px; font-size: 18px; z-index: 2147483647; bottom: 16px; left: 16px; border: 2px solid currentColor; background: rgba(20,26,42,0.85); pointer-events: none; }
+.signal-card .arrow { font-size: 18px; }
+.signal-card[data-side="buy"] { color: #22c55e; box-shadow: 0 0 12px rgba(34,197,94,0.35); }
+.signal-card[data-side="sell"] { color: #ef4444; box-shadow: 0 0 12px rgba(239,68,68,0.35); }

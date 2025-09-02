@@ -7,6 +7,10 @@
       'BTC/USDT': 'BINANCE:BTCUSDT',
       'ETH/USDT': 'BINANCE:ETHUSDT',
       'SOL/USDT': 'BINANCE:SOLUSDT',
+  'ONDO/USDT': 'BINANCE:ONDOUSDT',
+  'PAXG/USDT': 'BINANCE:PAXGUSDT',
+  'WIF/USDT': 'BINANCE:WIFUSDT',
+  'BCH/USDT': 'BINANCE:BCHUSDT',
       'BTC/BRL': 'BINANCE:BTCBRL',
       'ETH/BRL': 'BINANCE:ETHBRL',
       'SOL/BRL': 'BINANCE:SOLBRL',
@@ -137,5 +141,39 @@
       window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair } }));
       window.dispatchEvent(new CustomEvent('intervalChange', { detail: { interval: state.interval } }));
     } catch (e) {}
+
+    // Expor controles para alterar par/timeframe programaticamente
+    window.TVControls = {
+      setPair(pair) {
+        if (!pair) return;
+        state.pair = pair;
+        setTitle();
+        // Atualizar chip ativa
+        const chip = Array.from(document.querySelectorAll('[data-pair]')).find(b=>b.getAttribute('data-pair')===pair);
+        if (chip) {
+          document.querySelectorAll('[data-pair]').forEach(el=>el.classList.remove('active'));
+          chip.classList.add('active');
+        }
+        try { window.dispatchEvent(new CustomEvent('pairChange', { detail: { pair: state.pair } })); } catch (e) {}
+        if (state.widget) {
+          try { state.widget.chart().setSymbol(toTVSymbol(state.pair)); } catch (e) { initTV(); }
+        } else { initTV(); }
+      },
+      setInterval(tf) {
+        if (!tf) return;
+        state.interval = tf;
+        // Atualizar chip ativa
+        const chip = Array.from(document.querySelectorAll('[data-time]')).find(b=>b.getAttribute('data-time')===tf);
+        if (chip) {
+          document.querySelectorAll('[data-time]').forEach(el=>el.classList.remove('active'));
+          chip.classList.add('active');
+        }
+        try { window.dispatchEvent(new CustomEvent('intervalChange', { detail: { interval: state.interval } })); } catch (e) {}
+        if (state.widget) {
+          const tvInterval = toTVInterval(state.interval);
+          try { state.widget.chart().setResolution(tvInterval); } catch (e) { initTV(); }
+        } else { initTV(); }
+      }
+    };
   });
 })();

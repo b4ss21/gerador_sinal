@@ -2,8 +2,11 @@
   // Pequeno painel para ajustar pesos de algoritmos externos
   function ready(fn){ if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
   function createPanel(){
-    const host = document.getElementById('tv_chart'); if(!host) return;
+  const host = document.getElementById('tv_chart'); if(!host) return;
+  // Evitar duplicar painel caso múltiplos eventos disparem
+  if (host.querySelector('#algoWeightsPanel')) return;
     const panel = document.createElement('div');
+  panel.id = 'algoWeightsPanel';
     panel.style.position='absolute';
     panel.style.right='10px';
     panel.style.top='10px';
@@ -69,10 +72,19 @@
 
     host.appendChild(panel);
     refresh();
+
+    // Atalho: tecla "w" alterna exibição do painel
+    window.addEventListener('keydown', (ev)=>{
+      if ((ev.key||'').toLowerCase() === 'w') {
+        const cur = panel.style.display !== 'none';
+        panel.style.display = cur ? 'none' : 'block';
+      }
+    });
   }
 
   ready(()=>{
-    // Esperar widget do TV estar pronto para garantir #tv_chart posicionado
+    // Tentar no tvChartReady e também fallback após 2s
     window.addEventListener('tvChartReady', createPanel);
+    setTimeout(createPanel, 2000);
   });
 })();
